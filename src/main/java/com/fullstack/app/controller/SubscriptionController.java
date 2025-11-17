@@ -25,6 +25,12 @@ public class SubscriptionController {
     
     @PostMapping
     public ResponseEntity<?> createSubscription(@RequestBody Subscription subscription) {
+        if (subscription.getEmail() == null || subscription.getEmail().trim().isEmpty()) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Email is required");
+            return ResponseEntity.badRequest().body(error);
+        }
+        
         try {
             Subscription savedSubscription = subscriptionService.saveSubscription(subscription);
             return ResponseEntity.ok(savedSubscription);

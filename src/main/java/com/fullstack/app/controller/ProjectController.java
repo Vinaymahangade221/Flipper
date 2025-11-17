@@ -34,27 +34,46 @@ public class ProjectController {
     }
     
     @PostMapping
-    public ResponseEntity<Project> createProject(
+    public ResponseEntity<?> createProject(
             @RequestParam("name") String name,
             @RequestParam("description") String description,
             @RequestParam(value = "image", required = false) MultipartFile image) {
         
-        Project project = new Project();
-        project.setName(name);
-        project.setDescription(description);
-        
-        if (image != null && !image.isEmpty()) {
-            String fileName = fileStorageService.storeFile(image);
-            project.setImagePath("/uploads/" + fileName);
+        if (name == null || name.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Project name is required");
         }
         
-        Project savedProject = projectService.saveProject(project);
-        return ResponseEntity.ok(savedProject);
+        if (description == null || description.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Project description is required");
+        }
+        
+        try {
+            Project project = new Project();
+            project.setName(name.trim());
+            project.setDescription(description.trim());
+            
+            if (image != null && !image.isEmpty()) {
+                String fileName = fileStorageService.storeFile(image);
+                project.setImagePath("/uploads/" + fileName);
+            }
+            
+            Project savedProject = projectService.saveProject(project);
+            return ResponseEntity.ok(savedProject);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error creating project: " + e.getMessage());
+        }
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
-        projectService.deleteProject(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> deleteProject(@PathVariable Long id) {
+        try {
+            if (!projectService.getProjectById(id).isPresent()) {
+                return ResponseEntity.notFound().build();
+            }
+            projectService.deleteProject(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error deleting project: " + e.getMessage());
+        }
     }
 }

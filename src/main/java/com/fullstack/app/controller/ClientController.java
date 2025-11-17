@@ -34,29 +34,52 @@ public class ClientController {
     }
     
     @PostMapping
-    public ResponseEntity<Client> createClient(
+    public ResponseEntity<?> createClient(
             @RequestParam("name") String name,
             @RequestParam("description") String description,
             @RequestParam("designation") String designation,
             @RequestParam(value = "image", required = false) MultipartFile image) {
         
-        Client client = new Client();
-        client.setName(name);
-        client.setDescription(description);
-        client.setDesignation(designation);
-        
-        if (image != null && !image.isEmpty()) {
-            String fileName = fileStorageService.storeFile(image);
-            client.setImagePath("/uploads/" + fileName);
+        if (name == null || name.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Client name is required");
         }
         
-        Client savedClient = clientService.saveClient(client);
-        return ResponseEntity.ok(savedClient);
+        if (description == null || description.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Client description is required");
+        }
+        
+        if (designation == null || designation.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Client designation is required");
+        }
+        
+        try {
+            Client client = new Client();
+            client.setName(name.trim());
+            client.setDescription(description.trim());
+            client.setDesignation(designation.trim());
+            
+            if (image != null && !image.isEmpty()) {
+                String fileName = fileStorageService.storeFile(image);
+                client.setImagePath("/uploads/" + fileName);
+            }
+            
+            Client savedClient = clientService.saveClient(client);
+            return ResponseEntity.ok(savedClient);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error creating client: " + e.getMessage());
+        }
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteClient(@PathVariable Long id) {
-        clientService.deleteClient(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> deleteClient(@PathVariable Long id) {
+        try {
+            if (!clientService.getClientById(id).isPresent()) {
+                return ResponseEntity.notFound().build();
+            }
+            clientService.deleteClient(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error deleting client: " + e.getMessage());
+        }
     }
 }

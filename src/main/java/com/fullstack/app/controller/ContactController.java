@@ -22,8 +22,25 @@ public class ContactController {
     }
     
     @PostMapping
-    public ResponseEntity<Contact> createContact(@RequestBody Contact contact) {
-        Contact savedContact = contactService.saveContact(contact);
-        return ResponseEntity.ok(savedContact);
+    public ResponseEntity<?> createContact(@RequestBody Contact contact) {
+        if (contact.getFullName() == null || contact.getFullName().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Full name is required");
+        }
+        if (contact.getEmail() == null || contact.getEmail().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Email is required");
+        }
+        if (contact.getMobile() == null || contact.getMobile().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Mobile number is required");
+        }
+        if (contact.getCity() == null || contact.getCity().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("City is required");
+        }
+        
+        try {
+            Contact savedContact = contactService.saveContact(contact);
+            return ResponseEntity.ok(savedContact);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error saving contact: " + e.getMessage());
+        }
     }
 }
